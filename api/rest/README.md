@@ -1,7 +1,7 @@
 ParseyPredFace
 ==============
 
-This repo contains the resources required to build an API around
+This repo contains the resources required to build a REST API around
 PredPatt and Google's SyntaxNet/DRAGNN/ParseyMcParseface. The build
 instructions for the SyntaxNet Docker image are currently (7.21.17) broken,
 so this repo makes use of the pre-built image.
