@@ -22,7 +22,7 @@ def pp_update_communication(sentence, output):
                                 metadata=AnnotationMetadata(tool='syntaxnet',
                                                             timestamp=timestamp),
                                 tokenList=[Token(tokenIndex=i, text=token,
-#Do we need this?                                             textSpan=TextSpan(start=start,
+#   Do we need this?                                             textSpan=TextSpan(start=start,
 #                                                                   ending=ending)
                                                  )
                                            for ix, token in enumerate(tokens)],
@@ -49,8 +49,9 @@ def pp_update_communication(sentence, output):
     sentence.tokenization.dependencyParseList.append(dep_tok)
 
     #PP output
-    #TODO: implement
-    pp_concrete = predpatt_to_concrete(output['predpatt'])
+    preds = predpatt_to_concrete(output['predpatt'])
+    #TODO: Where to store? Situations are at the comm level, but API works at
+    #sentence
 
     return sentence
 
@@ -114,7 +115,38 @@ def conll_to_concrete(conll_tag):
 
 
 def predpatt_to_concrete(pp):
-    print 'placeholder'
+    fragments = get_ud_fragments(pp)
+    situations = []
+    for pred in fragments:
+        situationMention = SituationMention()
+        situationMention.uuid = next(aug)
+        situationMention.situationType = "Predicate"
+        #TODO: maybe add the phrase text?
+        #situationMention.text = comm.text
+        situationMention.dependencyList = pred['pred_deps']
+        situationMention.tokens = pred['pred_toks']
+
+        arguments = []
+        for arg in zip(pred['arg_deps'], pred['arg_toks']):
+            mentionArg = MentionArgument()
+            mentionArg.entityMentionId = next(aug)
+            mentionArg.dependencyList = arg[0]
+            mentionArg.tokens = arg[1]
+            arguments.append(mentionArg)
+
+        situationMention.argumentList = arguments
+        situations.append(situationMention)
+
+
+    situationmentionSet = SituationMentionSet()
+    situationMention.metadata = AnnotationMetadata(
+        tool='PredPatt',
+        timestamp=int(time.time())
+    )
+    situationmentionSet.uuid = next(aug)
+    situationmentionSet.mentionList = situations
+
+    return situations
 
 
 def get_ud_fragments(pp):
@@ -122,21 +154,28 @@ def get_ud_fragments(pp):
     for predicate in pp.instances:
         # Get dep parses for the predicate.
         pred_deps = []
+        pred_tokens = []
         for token in predicate.tokens:
+            pred_tokens.append(token.position)
             # (head, relation, dependent)
             dep = Dependency(token.gov.position, token.position, token.gov_rel)
             pred_deps.append(dep)
 
         # Get dep parses for the arguments.
-        arg2deps = {}
+        arg2deps = []
         for argument in predicate.arguments:
             arg_deps = []
+            arg_tokens = []
             for token in argument.tokens:
+                arg_tokens.append(token.position)
                 dep = Dependency(token.gov.position, token.position,
                                  token.gov_rel)
                 arg_deps.append(dep)
-            arg2deps[argument.position] = arg_deps
-        predicates.append((pred_deps, arg2deps))
+            arg2deps.append(arg_deps)
+            predicates.append({'pred_deps': pred_deps,
+                               'arg_deps': arg2deps,
+                               'pred_toks': pred_tokens,
+                               'arg_toks': arg_tokens})
     return predicates
 
 
