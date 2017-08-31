@@ -41,17 +41,17 @@ def pp_update_communication(sentence, output):
     sentence.tokenization.tokenTaggingList.append(pos)
 
     #Dep relation
+    #Using this UUID to point to the PredPatt outputs. Not sure if this is right.
+    dep_uuid = next(aug)
     dep_tok = Tokenization(kind=TokenizationKind.TOKEN_LIST,
                            metadata=AnnotationMetadata(tool='syntaxnet',
                                                        timestamp=timestamp),
                            dependencyParseList=deps,
-                           uuid=next(aug))
+                           uuid=dep_uuid)
     sentence.tokenization.dependencyParseList.append(dep_tok)
 
     #PP output
-    preds = predpatt_to_concrete(output['predpatt'])
-    #TODO: Where to store? Situations are at the comm level, but API works at
-    #sentence
+    preds = predpatt_to_concrete(output['predpatt'], dep_uuid)
 
     return sentence
 
@@ -114,12 +114,12 @@ def conll_to_concrete(conll_tag):
     return triples, tokens, tags
 
 
-def predpatt_to_concrete(pp):
+def predpatt_to_concrete(pp, dep_uuid):
     fragments = get_ud_fragments(pp)
     situations = []
     for pred in fragments:
         situationMention = SituationMention()
-        situationMention.uuid = next(aug)
+        situationMention.uuid = dep_uuid
         situationMention.situationType = "Predicate"
         #TODO: maybe add the phrase text?
         #situationMention.text = comm.text

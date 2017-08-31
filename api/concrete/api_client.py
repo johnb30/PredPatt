@@ -2,6 +2,8 @@ import time
 import nltk
 import argparse
 
+from concrete.util import create_comm
+
 from concrete.structure.ttypes import (
     Section,
     Sentence,
@@ -22,38 +24,9 @@ from thrift.protocol import TCompactProtocol
 
 
 def create_base_comm(comm_id, text, toolname="article_generator"):
-    timestamp = int(time.time())
+    sentences = '\n'.join(nltk.sent_tokenize(text))
 
-    augf = AnalyticUUIDGeneratorFactory()
-    aug = augf.create()
-
-    comm = Communication(id=comm_id,
-                         metadata=AnnotationMetadata(tool=toolname,
-                                                     timestamp=timestamp),
-                         type=toolname, uuid=next(aug))
-    comm.text = text
-
-    sentences = []
-    offset = 0
-    for i, sent in enumerate(nltk.sent_tokenize(text), 0):
-        #Each split sentence. Span is roughly correct.
-        sentence = Sentence(textSpan=TextSpan(0 + offset,
-                                              offset + len(sent) + 1),
-                            tokenization=[],
-                            uuid=next(aug))
-        sentences.append(sentence)
-
-        offset += len(sent) + i
-
-    #Each comm will have a single section with the list of sentences in a
-    #single paragraph.
-    section = Section(kind='paragraph',
-                      sentenceList=sentences,
-                      textSpan=TextSpan(0, len(text)),
-                      uuid=next(aug))
-
-    comm.sectionList = [section]
-    comm.text = text
+    comm = create_comm(comm_id, sentences, metadata_tool=toolname)
 
     return comm
 

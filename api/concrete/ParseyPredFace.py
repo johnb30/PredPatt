@@ -44,7 +44,7 @@ def load_model(base_dir, master_spec_name, checkpoint_name):
         #sess.run(tf.global_variables_initializer())
         #sess.run('save/restore_all', {'save/Const:0': os.path.join(base_dir, checkpoint_name)})
         builder.saver.restore(sess, os.path.join(base_dir, checkpoint_name))
-        
+
     def annotate_sentence(sentence):
         with graph.as_default():
             return sess.run([annotator['annotations'], annotator['traces']],
@@ -119,5 +119,5 @@ def parse(text):
 
     #NOTE:
     #This returns the pretty print formatted string from PredPatt. This is done
-    #largely as a place holder for JSON compatability within the REST API. 
-    return {'predpatt': ppatt.pprint(), 'conll': conll_parsed, 'original': text}
+    #largely as a place holder for JSON compatability within the REST API.
+    return {'predpatt': ppatt, 'conll': conll_parsed, 'original': text}
